@@ -13,7 +13,7 @@ export const useMenuStore = defineStore('menu', () => {
       title: '仪表盘',
       icon: 'House',
       path: '/dashboard',
-      component: 'Dashboard',
+      component: 'dashboard',
       meta: {
         title: '仪表盘',
         icon: 'House',
@@ -57,77 +57,6 @@ export const useMenuStore = defineStore('menu', () => {
           meta: {
             title: '权限管理',
             icon: 'Key'
-          }
-        }
-      ]
-    },
-    {
-      id: 3,
-      title: '系统管理',
-      icon: 'Setting',
-      path: '/system',
-      children: [
-        {
-          id: 31,
-          title: '菜单管理',
-          icon: 'Menu',
-          path: '/system/menus',
-          component: 'system/MenuList',
-          meta: {
-            title: '菜单管理',
-            icon: 'Menu'
-          }
-        },
-        {
-          id: 32,
-          title: '系统设置',
-          icon: 'Tools',
-          path: '/system/settings',
-          component: 'system/Settings',
-          meta: {
-            title: '系统设置',
-            icon: 'Tools'
-          }
-        },
-        {
-          id: 33,
-          title: '操作日志',
-          icon: 'Document',
-          path: '/system/logs',
-          component: 'system/LogList',
-          meta: {
-            title: '操作日志',
-            icon: 'Document'
-          }
-        }
-      ]
-    },
-    {
-      id: 4,
-      title: '数据统计',
-      icon: 'DataAnalysis',
-      path: '/analytics',
-      children: [
-        {
-          id: 41,
-          title: '用户统计',
-          icon: 'TrendCharts',
-          path: '/analytics/users',
-          component: 'analytics/UserAnalytics',
-          meta: {
-            title: '用户统计',
-            icon: 'TrendCharts'
-          }
-        },
-        {
-          id: 42,
-          title: '系统监控',
-          icon: 'Monitor',
-          path: '/analytics/monitor',
-          component: 'analytics/SystemMonitor',
-          meta: {
-            title: '系统监控',
-            icon: 'Monitor'
           }
         }
       ]
@@ -189,8 +118,10 @@ export const useMenuStore = defineStore('menu', () => {
         menu.children.forEach(child => processMenu(child, parentPath))
       } else if (menu.path && menu.component) {
         // 叶子节点，生成路由
+        // 去掉路径开头的 '/'，因为在子路由中不需要
+        const routePath = menu.path.startsWith('/') ? menu.path.substring(1) : menu.path
         routes.push({
-          path: menu.path,
+          path: routePath,
           name: menu.path.replace(/\//g, '_'),
           component: () => import(`@/views/${menu.component}.vue`).catch(() =>
             import('@/views/NotFound.vue')

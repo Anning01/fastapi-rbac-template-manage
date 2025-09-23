@@ -39,7 +39,6 @@
               :key="child.id"
               :index="child.path"
               class="submenu-item"
-              @click="selectMenu(child)"
             >
               <el-icon>
                 <component :is="child.icon || 'Document'" />
@@ -53,7 +52,6 @@
             v-else
             :index="menu.path"
             class="menu-item"
-            @click="selectMenu(menu)"
           >
             <el-icon>
               <component :is="menu.icon || 'Menu'" />
@@ -96,7 +94,24 @@ const route = useRoute()
 const activeMenu = computed(() => route.path)
 
 const handleSelect = (index) => {
-  // Element Plus 菜单选择处理
+  // 通过路径找到对应的菜单项
+  const findMenuByPath = (menus, path) => {
+    for (const menu of menus) {
+      if (menu.path === path) {
+        return menu
+      }
+      if (menu.children) {
+        const found = findMenuByPath(menu.children, path)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  const menu = findMenuByPath(props.menuList, index)
+  if (menu) {
+    selectMenu(menu)
+  }
 }
 
 const selectMenu = (menu) => {

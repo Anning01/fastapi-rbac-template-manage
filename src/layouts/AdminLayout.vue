@@ -33,6 +33,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
 import { useMenuStore } from '@/stores/menu'
 import AdminSidebar from './AdminSidebar.vue'
 import AdminHeader from './AdminHeader.vue'

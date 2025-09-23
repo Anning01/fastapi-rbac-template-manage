@@ -1,22 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useMenuStore } from '@/stores/menu'
 
-// 基础路由（不需要权限的路由）
-const baseRoutes = [
-  {
-    path: '/',
-    redirect: '/dashboard'
-  },
- {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import("@/views/dashboard.vue"),
-    meta: {
-        title: '仪表盘',
-        hideInMenu: false,
-        requiresAuth: true
-    }
-  },
+// 不需要权限和布局的路由
+const publicRoutes = [
   {
     path: '/login',
     name: 'Login',
@@ -48,30 +34,52 @@ const baseRoutes = [
   }
 ]
 
-// 主布局路由
+// 主布局路由（包含所有需要布局的页面）
 const layoutRoute = {
   path: '/',
   name: 'Layout',
   component: () => import('@/layouts/AdminLayout.vue'),
-  children: [] // 动态菜单路由将被添加到这里
+  redirect: '/dashboard',
+  children: [
+    {
+      path: 'dashboard',
+      name: 'Dashboard',
+      component: () => import('@/views/dashboard.vue'),
+      meta: {
+        title: '仪表盘',
+        hideInMenu: false,
+        requiresAuth: true
+      }
+    }
+  ]
 }
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [...baseRoutes]
+  routes: [layoutRoute, ...publicRoutes]
 })
 
 // 动态添加路由的函数
 export const addDynamicRoutes = (menuRoutes) => {
-  // 清除之前的动态路由（如果有的话）
-  if (router.hasRoute('Layout')) {
+  // 清除之前的动态路由（除了 dashboard）
+  const currentLayoutRoute = router.getRoutes().find(route => route.name === 'Layout')
+  if (currentLayoutRoute && currentLayoutRoute.children) {
+    // 保留 dashboard 路由，移除其他动态路由
+    const staticChildren = currentLayoutRoute.children.filter(child =>
+      child.name === 'Dashboard'
+    )
+
+    // 移除整个布局路由并重新添加
     router.removeRoute('Layout')
   }
 
-  // 创建新的布局路由并添加子路由
+  // 创建新的布局路由，包含静态路由和动态路由
   const newLayoutRoute = {
     ...layoutRoute,
-    children: menuRoutes
+    children: [
+      ...layoutRoute.children, // 包含 dashboard 等静态路由
+      ...menuRoutes // 添加动态菜单路由
+    ]
   }
 
   router.addRoute(newLayoutRoute)
