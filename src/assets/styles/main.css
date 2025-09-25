@@ -126,6 +126,13 @@ body {
   color: var(--primary-color);
 }
 
+/* 侧边栏子菜单Popover样式 */
+.sidebar-submenu-popover {
+  padding: 0 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   :root {

@@ -27,54 +27,96 @@
               v-if="menu.children && menu.children.length > 0"
               class="menu-group"
             >
-              <div
-                class="menu-parent"
-                :class="{
-                  active: isParentActive(menu),
-                  expanded: expandedMenus.includes(menu.id)
-                }"
-                @click="toggleSubmenu(menu)"
+              <!-- 折叠状态下的子菜单处理 -->
+              <el-popover
+                v-if="collapsed"
+                placement="right-start"
+                :width="200"
+                trigger="hover"
+                popper-class="sidebar-submenu-popover"
               >
-                <div class="menu-parent-content">
-                  <div class="menu-icon-wrapper">
-                    <el-icon class="menu-icon">
-                      <component :is="menu.icon || 'Menu'" />
-                    </el-icon>
+                <template #reference>
+                  <div
+                    class="menu-parent"
+                    :class="{
+                      active: isParentActive(menu)
+                    }"
+                  >
+                    <div class="menu-parent-content">
+                      <div class="menu-icon-wrapper">
+                        <el-icon class="menu-icon">
+                          <component :is="menu.icon || 'Menu'" />
+                        </el-icon>
+                      </div>
+                    </div>
                   </div>
-                  <transition name="fade-slide">
-                    <div v-if="!collapsed" class="menu-text-wrapper">
+                </template>
+                <div class="popover-submenu">
+                  <div class="popover-title">{{ menu.title }}</div>
+                  <div
+                    v-for="child in menu.children"
+                    :key="child.id"
+                    class="popover-submenu-item"
+                    :class="{ active: activeMenu === child.fullPath }"
+                    @click="handleMenuClick(child.fullPath)"
+                  >
+                    <el-icon class="popover-submenu-icon">
+                      <component :is="child.icon || 'Document'" />
+                    </el-icon>
+                    <span>{{ child.title }}</span>
+                  </div>
+                </div>
+              </el-popover>
+
+              <!-- 展开状态下的子菜单 -->
+              <div v-else>
+                <div
+                  class="menu-parent"
+                  :class="{
+                    active: isParentActive(menu),
+                    expanded: expandedMenus.includes(menu.id)
+                  }"
+                  @click="toggleSubmenu(menu)"
+                >
+                  <div class="menu-parent-content">
+                    <div class="menu-icon-wrapper">
+                      <el-icon class="menu-icon">
+                        <component :is="menu.icon || 'Menu'" />
+                      </el-icon>
+                    </div>
+                    <div class="menu-text-wrapper">
                       <span class="menu-title">{{ menu.title }}</span>
                       <el-icon class="expand-icon" :class="{ rotated: expandedMenus.includes(menu.id) }">
                         <ArrowDown />
                       </el-icon>
                     </div>
-                  </transition>
-                </div>
-              </div>
-
-              <!-- 子菜单 -->
-              <transition name="submenu-slide">
-                <div
-                  v-show="!collapsed && expandedMenus.includes(menu.id)"
-                  class="submenu-container"
-                >
-                  <div
-                    v-for="child in menu.children"
-                    :key="child.id"
-                    class="submenu-item"
-                    :class="{ active: activeMenu === child.fullPath }"
-                    @click="handleMenuClick(child.fullPath)"
-                  >
-                    <div class="submenu-indicator"></div>
-                    <div class="submenu-content">
-                      <el-icon class="submenu-icon">
-                        <component :is="child.icon || 'Document'" />
-                      </el-icon>
-                      <span class="submenu-title">{{ child.title }}</span>
-                    </div>
                   </div>
                 </div>
-              </transition>
+
+                <!-- 子菜单 -->
+                <transition name="submenu-slide">
+                  <div
+                    v-show="expandedMenus.includes(menu.id)"
+                    class="submenu-container"
+                  >
+                    <div
+                      v-for="child in menu.children"
+                      :key="child.id"
+                      class="submenu-item"
+                      :class="{ active: activeMenu === child.fullPath }"
+                      @click="handleMenuClick(child.fullPath)"
+                    >
+                      <div class="submenu-indicator"></div>
+                      <div class="submenu-content">
+                        <el-icon class="submenu-icon">
+                          <component :is="child.icon || 'Document'" />
+                        </el-icon>
+                        <span class="submenu-title">{{ child.title }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
             </div>
 
             <!-- 没有子菜单的情况 -->
@@ -102,39 +144,14 @@
       </el-scrollbar>
     </div>
 
-    <!-- 用户信息区域 -->
-    <div class="user-section">
-      <div class="user-card" :class="{ collapsed: collapsed }">
-        <div class="user-avatar">
-          <el-icon size="24">
-            <User />
-          </el-icon>
-        </div>
-        <transition name="fade-slide">
-          <div v-if="!collapsed" class="user-info">
-            <div class="user-name">管理员</div>
-            <div class="user-role">系统管理员</div>
-          </div>
-        </transition>
-      </div>
-    </div>
 
-    <!-- 折叠按钮 -->
-    <div class="collapse-btn" @click="$emit('toggle-sidebar')">
-      <div class="collapse-btn-inner">
-        <el-icon>
-          <Fold v-if="!collapsed" />
-          <Expand v-else />
-        </el-icon>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Setting, Fold, Expand, ArrowDown, User } from '@element-plus/icons-vue'
+import { Setting, ArrowDown } from '@element-plus/icons-vue'
 
 const props = defineProps({
   collapsed: {
@@ -147,7 +164,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['menu-select', 'toggle-sidebar'])
+const emit = defineEmits(['menu-select'])
 
 const route = useRoute()
 const router = useRouter()
@@ -165,8 +182,6 @@ const isParentActive = (menu) => {
 
 // 切换子菜单展开/收起
 const toggleSubmenu = (menu) => {
-  if (props.collapsed) return
-
   const index = expandedMenus.value.indexOf(menu.id)
   if (index > -1) {
     expandedMenus.value.splice(index, 1)
@@ -568,102 +583,44 @@ watch(() => props.collapsed, (collapsed) => {
   color: #667eea;
 }
 
-/* 用户区域 */
-.user-section {
-  padding: 16px;
-  border-top: 1px solid rgba(226, 232, 240, 0.6);
-  background: linear-gradient(135deg,
-    rgba(248, 250, 252, 0.8) 0%,
-    rgba(241, 245, 249, 0.8) 100%
-  );
+/* Popover子菜单样式 */
+.popover-submenu {
+  padding: 8px 0;
 }
 
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.user-card:hover {
-  background: rgba(255, 255, 255, 0.95);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.user-card.collapsed {
-  justify-content: center;
-  padding: 12px;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.user-name {
+.popover-title {
+  padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
   color: #374151;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 4px;
 }
 
-.user-role {
-  font-size: 12px;
-  color: #64748b;
-}
-
-/* 折叠按钮 */
-.collapse-btn {
-  position: absolute;
-  top: 50%;
-  right: -16px;
-  transform: translateY(-50%);
-  z-index: 10;
-  cursor: pointer;
-}
-
-.collapse-btn-inner {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 50%;
+.popover-submenu-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #64748b;
-  transition: all 0.3s ease;
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  color: #475569;
 }
 
-.collapse-btn-inner:hover {
-  background: #667eea;
-  color: white;
-  transform: scale(1.1);
-  box-shadow:
-    0 6px 20px rgba(102, 126, 234, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+.popover-submenu-item:hover {
+  background: #f8fafc;
+  color: #667eea;
+}
+
+.popover-submenu-item.active {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  font-weight: 600;
+}
+
+.popover-submenu-icon {
+  font-size: 16px;
 }
 
 /* 动画 */
@@ -714,10 +671,6 @@ watch(() => props.collapsed, (collapsed) => {
 
   .modern-sidebar:not(.collapsed) {
     transform: translateX(0);
-  }
-
-  .collapse-btn {
-    display: none;
   }
 }
 
