@@ -41,12 +41,7 @@
       </el-button>
 
       <!-- 主题切换 -->
-      <el-button circle class="header-btn" @click="toggleTheme">
-        <el-icon size="18">
-          <Sunny v-if="!isDark" />
-          <Moon v-else />
-        </el-icon>
-      </el-button>
+      <ThemeSwitcher />
 
       <!-- 用户信息 -->
       <el-dropdown @command="handleCommand" class="user-dropdown">
@@ -87,14 +82,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import {
   Fold,
   Expand,
   Search,
   Bell,
   FullScreen,
-  Sunny,
-  Moon,
   User,
   ArrowDown,
   Setting,
@@ -111,7 +105,6 @@ const props = defineProps({
 const emit = defineEmits(['toggle-sidebar', 'logout'])
 
 const searchQuery = ref('')
-const isDark = ref(false)
 const notificationCount = ref(3)
 
 const userInfo = computed(() => ({
@@ -133,10 +126,6 @@ const toggleFullscreen = () => {
   }
 }
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  ElMessage.success(isDark.value ? '切换到暗色主题' : '切换到亮色主题')
-}
 
 const handleCommand = (command) => {
   switch (command) {
@@ -160,7 +149,8 @@ const handleCommand = (command) => {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: var(--bg-primary);
+  background: var(--header-bg);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
 }
 

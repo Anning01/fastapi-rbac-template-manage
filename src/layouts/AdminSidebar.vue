@@ -234,16 +234,10 @@ watch(() => props.collapsed, (collapsed) => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(248, 250, 252, 0.95) 50%,
-    rgba(241, 245, 249, 0.95) 100%
-  );
+  background: var(--sidebar-bg);
   backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow:
-    4px 0 24px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  border-right: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
@@ -257,11 +251,8 @@ watch(() => props.collapsed, (collapsed) => {
 /* Logo区域 */
 .logo-container {
   padding: 24px 20px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.05) 0%,
-    rgba(118, 75, 162, 0.05) 100%
-  );
+  border-bottom: 1px solid var(--border-color);
+  background: var(--menu-hover);
 }
 
 .logo {
@@ -308,12 +299,10 @@ watch(() => props.collapsed, (collapsed) => {
   line-height: 1.2;
 }
 
-.logo-subtitle {
-  font-size: 11px;
+.logo-title {
+  font-size: 13px;
   font-weight: 500;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--text-secondary);
 }
 
 /* 菜单容器 */
@@ -349,6 +338,7 @@ watch(() => props.collapsed, (collapsed) => {
   overflow: hidden;
 }
 
+/* 菜单项 */
 .menu-parent::before {
   content: '';
   position: absolute;
@@ -356,10 +346,7 @@ watch(() => props.collapsed, (collapsed) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.08) 0%,
-    rgba(118, 75, 162, 0.08) 100%
-  );
+  background: var(--menu-hover);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -370,10 +357,7 @@ watch(() => props.collapsed, (collapsed) => {
 
 .menu-parent.active::before {
   opacity: 1;
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.15) 0%,
-    rgba(118, 75, 162, 0.15) 100%
-  );
+  background: var(--menu-active);
 }
 
 .menu-parent-content {
@@ -385,7 +369,7 @@ watch(() => props.collapsed, (collapsed) => {
 }
 
 .menu-parent.active .menu-parent-content {
-  color: #667eea;
+  color: var(--primary-color);
   font-weight: 600;
 }
 
@@ -453,7 +437,7 @@ watch(() => props.collapsed, (collapsed) => {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: rgba(241, 245, 249, 0.8);
+  background: var(--icon-bg);
   margin-right: 12px;
   transition: all 0.3s ease;
   position: relative;
@@ -461,19 +445,19 @@ watch(() => props.collapsed, (collapsed) => {
 
 .menu-item.active .menu-icon-wrapper,
 .menu-parent.active .menu-icon-wrapper {
-  background: rgba(102, 126, 234, 0.1);
+  background: var(--icon-active-bg);
   transform: scale(1.05);
 }
 
 .menu-icon {
   font-size: 18px;
-  color: #64748b;
+  color: var(--text-secondary);
   transition: all 0.3s ease;
 }
 
 .menu-item.active .menu-icon,
 .menu-parent.active .menu-icon {
-  color: #667eea;
+  color: var(--primary-color);
   transform: scale(1.1);
 }
 
@@ -488,13 +472,13 @@ watch(() => props.collapsed, (collapsed) => {
 .menu-title {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
   transition: all 0.3s ease;
 }
 
 .expand-icon {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-secondary);
   transition: all 0.3s ease;
   margin-left: 8px;
 }
@@ -504,14 +488,14 @@ watch(() => props.collapsed, (collapsed) => {
 }
 
 .menu-parent.active .expand-icon {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 /* 子菜单容器 */
 .submenu-container {
   margin-left: 12px;
   margin-top: 4px;
-  border-left: 2px solid rgba(226, 232, 240, 0.6);
+  border-left: 2px solid var(--border-color);
   padding-left: 8px;
 }
 
@@ -528,16 +512,13 @@ watch(() => props.collapsed, (collapsed) => {
 }
 
 .submenu-item:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: var(--menu-hover);
   transform: translateX(2px);
 }
 
 .submenu-item.active {
-  background: linear-gradient(135deg,
-    rgba(102, 126, 234, 0.12) 0%,
-    rgba(118, 75, 162, 0.12) 100%
-  );
-  color: #667eea;
+  background: var(--menu-active);
+  color: var(--primary-color);
   font-weight: 600;
   transform: translateX(4px);
 }
@@ -546,13 +527,13 @@ watch(() => props.collapsed, (collapsed) => {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #cbd5e1;
+  background: var(--text-muted);
   margin-right: 12px;
   transition: all 0.3s ease;
 }
 
 .submenu-item.active .submenu-indicator {
-  background: #667eea;
+  background: var(--primary-color);
   transform: scale(1.5);
 }
 
@@ -564,23 +545,23 @@ watch(() => props.collapsed, (collapsed) => {
 
 .submenu-icon {
   font-size: 16px;
-  color: #64748b;
+  color: var(--text-secondary);
   transition: all 0.3s ease;
 }
 
 .submenu-item.active .submenu-icon {
-  color: #667eea;
+  color: var(--primary-color);
   transform: scale(1.1);
 }
 
 .submenu-title {
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--text-primary);
 }
 
 .submenu-item.active .submenu-title {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 /* Popover子菜单样式 */
@@ -592,8 +573,8 @@ watch(() => props.collapsed, (collapsed) => {
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
-  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
   margin-bottom: 4px;
 }
 
@@ -605,17 +586,17 @@ watch(() => props.collapsed, (collapsed) => {
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 13px;
-  color: #475569;
+  color: var(--text-primary);
 }
 
 .popover-submenu-item:hover {
-  background: #f8fafc;
-  color: #667eea;
+  background: var(--menu-hover);
+  color: var(--primary-color);
 }
 
 .popover-submenu-item.active {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
+  background: var(--menu-active);
+  color: var(--primary-color);
   font-weight: 600;
 }
 
@@ -681,12 +662,12 @@ watch(() => props.collapsed, (collapsed) => {
 }
 
 .menu-scrollbar :deep(.el-scrollbar__thumb) {
-  background: rgba(102, 126, 234, 0.3);
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
 }
 
 .menu-scrollbar :deep(.el-scrollbar__thumb:hover) {
-  background: rgba(102, 126, 234, 0.5);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* 特殊状态 */
