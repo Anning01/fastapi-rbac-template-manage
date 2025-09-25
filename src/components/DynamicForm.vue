@@ -456,13 +456,32 @@ const handleUploadRemove = (field, file, fileList) => {
 
 // 监听字段变化
 watch(() => props.fields, initFormData, { immediate: true, deep: true })
+
+// 监听modelValue变化，单向同步到formData
 watch(() => props.modelValue, (newValue) => {
-  Object.assign(formData, newValue)
+  if (newValue && Object.keys(newValue).length > 0) {
+    // 使用深拷贝避免引用问题，并防止循环更新
+    const clonedValue = JSON.parse(JSON.stringify(newValue))
+    Object.keys(formData).forEach(key => {
+      if (clonedValue.hasOwnProperty(key) && formData[key] !== clonedValue[key]) {
+        formData[key] = clonedValue[key]
+      }
+    })
+  }
 }, { immediate: true, deep: true })
 
-// 监听表单数据变化，同步到父组件
+// 防抖的表单数据更新
+let updateTimeout = null
+const debouncedUpdate = (newValue) => {
+  if (updateTimeout) clearTimeout(updateTimeout)
+  updateTimeout = setTimeout(() => {
+    emit('update:modelValue', { ...newValue })
+  }, 16) // 16ms防抖，约等于一帧的时间
+}
+
+// 监听表单数据变化，同步到父组件（使用防抖避免频繁更新）
 watch(formData, (newValue) => {
-  emit('update:modelValue', { ...newValue })
+  debouncedUpdate(newValue)
 }, { deep: true })
 
 // 暴露方法给父组件

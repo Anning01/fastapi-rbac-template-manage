@@ -52,9 +52,11 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Setting } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loginForm = ref()
 const loading = ref(false)
 
@@ -76,16 +78,22 @@ const rules = {
 const handleLogin = async () => {
   if (!loginForm.value) return
 
-  await loginForm.value.validate((valid) => {
+  await loginForm.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
-
-      // 模拟登录请求
-      setTimeout(() => {
+      try {
+        const success = await authStore.login(form)
+        if (success) {
+          ElMessage.success('登录成功')
+          router.push('/dashboard')
+        } else {
+          ElMessage.error('用户名或密码错误')
+        }
+      } catch (error) {
+        ElMessage.error('登录失败，请稍后重试')
+      } finally {
         loading.value = false
-        ElMessage.success('登录成功')
-        router.push('/dashboard')
-      }, 1000)
+      }
     }
   })
 }

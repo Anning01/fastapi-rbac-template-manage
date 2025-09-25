@@ -1,80 +1,140 @@
 <template>
-  <div class="sidebar">
+  <div class="modern-sidebar" :class="{ collapsed: collapsed }">
     <!-- Logo区域 -->
-    <div class="logo-container" :class="{ collapsed: collapsed }">
+    <div class="logo-container">
       <div class="logo">
-        <el-icon size="28" color="var(--primary-color)">
-          <Setting />
-        </el-icon>
-        <transition name="fade">
-          <span v-if="!collapsed" class="logo-text">管理后台</span>
+        <div class="logo-icon">
+          <el-icon size="28">
+            <Setting />
+          </el-icon>
+        </div>
+        <transition name="fade-slide">
+          <div v-if="!collapsed" class="logo-content">
+            <span class="logo-text">管理后台</span>
+            <span class="logo-subtitle">Admin Panel</span>
+          </div>
         </transition>
       </div>
     </div>
 
     <!-- 菜单区域 -->
-    <el-scrollbar class="menu-scrollbar">
-      <el-menu
-        :default-active="activeMenu"
-        :collapse="collapsed"
-        :unique-opened="true"
-        class="sidebar-menu"
-        @select="handleSelect"
-      >
-        <template v-for="menu in menuList" :key="menu.id">
-          <!-- 有子菜单的情况 -->
-          <el-sub-menu
-            v-if="menu.children && menu.children.length > 0"
-            :index="menu.id.toString()"
-            class="menu-item"
-          >
-            <template #title>
-              <el-icon>
-                <component :is="menu.icon || 'Menu'" />
-              </el-icon>
-              <span>{{ menu.title }}</span>
-            </template>
-            <el-menu-item
-              v-for="child in menu.children"
-              :key="child.id"
-              :index="child.path"
-              class="submenu-item"
+    <div class="menu-container">
+      <el-scrollbar class="menu-scrollbar" view-class="menu-scroll-view">
+        <div class="menu-wrapper">
+          <template v-for="menu in menuList" :key="menu.id">
+            <!-- 有子菜单的情况 -->
+            <div
+              v-if="menu.children && menu.children.length > 0"
+              class="menu-group"
             >
-              <el-icon>
-                <component :is="child.icon || 'Document'" />
-              </el-icon>
-              <span>{{ child.title }}</span>
-            </el-menu-item>
-          </el-sub-menu>
+              <div
+                class="menu-parent"
+                :class="{
+                  active: isParentActive(menu),
+                  expanded: expandedMenus.includes(menu.id)
+                }"
+                @click="toggleSubmenu(menu)"
+              >
+                <div class="menu-parent-content">
+                  <div class="menu-icon-wrapper">
+                    <el-icon class="menu-icon">
+                      <component :is="menu.icon || 'Menu'" />
+                    </el-icon>
+                  </div>
+                  <transition name="fade-slide">
+                    <div v-if="!collapsed" class="menu-text-wrapper">
+                      <span class="menu-title">{{ menu.title }}</span>
+                      <el-icon class="expand-icon" :class="{ rotated: expandedMenus.includes(menu.id) }">
+                        <ArrowDown />
+                      </el-icon>
+                    </div>
+                  </transition>
+                </div>
+              </div>
 
-          <!-- 没有子菜单的情况 -->
-          <el-menu-item
-            v-else
-            :index="menu.path"
-            class="menu-item"
-          >
-            <el-icon>
-              <component :is="menu.icon || 'Menu'" />
-            </el-icon>
-            <span>{{ menu.title }}</span>
-          </el-menu-item>
-        </template>
-      </el-menu>
-    </el-scrollbar>
+              <!-- 子菜单 -->
+              <transition name="submenu-slide">
+                <div
+                  v-show="!collapsed && expandedMenus.includes(menu.id)"
+                  class="submenu-container"
+                >
+                  <div
+                    v-for="child in menu.children"
+                    :key="child.id"
+                    class="submenu-item"
+                    :class="{ active: activeMenu === child.fullPath }"
+                    @click="handleMenuClick(child.fullPath)"
+                  >
+                    <div class="submenu-indicator"></div>
+                    <div class="submenu-content">
+                      <el-icon class="submenu-icon">
+                        <component :is="child.icon || 'Document'" />
+                      </el-icon>
+                      <span class="submenu-title">{{ child.title }}</span>
+                    </div>
+                  </div>
+                </div>
+              </transition>
+            </div>
+
+            <!-- 没有子菜单的情况 -->
+            <div
+              v-else
+              class="menu-item"
+              :class="{ active: activeMenu === menu.fullPath }"
+              @click="handleMenuClick(menu.fullPath)"
+            >
+              <div class="menu-item-content">
+                <div class="menu-icon-wrapper">
+                  <el-icon class="menu-icon">
+                    <component :is="menu.icon || 'Menu'" />
+                  </el-icon>
+                </div>
+                <transition name="fade-slide">
+                  <div v-if="!collapsed" class="menu-text-wrapper">
+                    <span class="menu-title">{{ menu.title }}</span>
+                  </div>
+                </transition>
+              </div>
+            </div>
+          </template>
+        </div>
+      </el-scrollbar>
+    </div>
+
+    <!-- 用户信息区域 -->
+    <div class="user-section">
+      <div class="user-card" :class="{ collapsed: collapsed }">
+        <div class="user-avatar">
+          <el-icon size="24">
+            <User />
+          </el-icon>
+        </div>
+        <transition name="fade-slide">
+          <div v-if="!collapsed" class="user-info">
+            <div class="user-name">管理员</div>
+            <div class="user-role">系统管理员</div>
+          </div>
+        </transition>
+      </div>
+    </div>
 
     <!-- 折叠按钮 -->
     <div class="collapse-btn" @click="$emit('toggle-sidebar')">
-      <el-icon>
-        <Fold v-if="!collapsed" />
-        <Expand v-else />
-      </el-icon>
+      <div class="collapse-btn-inner">
+        <el-icon>
+          <Fold v-if="!collapsed" />
+          <Expand v-else />
+        </el-icon>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Setting, Fold, Expand, ArrowDown, User } from '@element-plus/icons-vue'
 
 const props = defineProps({
   collapsed: {
@@ -90,151 +150,606 @@ const props = defineProps({
 const emit = defineEmits(['menu-select', 'toggle-sidebar'])
 
 const route = useRoute()
+const router = useRouter()
+
+// 展开的菜单
+const expandedMenus = ref([])
 
 const activeMenu = computed(() => route.path)
 
-const handleSelect = (index) => {
-  // 通过路径找到对应的菜单项
-  const findMenuByPath = (menus, path) => {
-    for (const menu of menus) {
-      if (menu.path === path) {
-        return menu
-      }
-      if (menu.children) {
-        const found = findMenuByPath(menu.children, path)
-        if (found) return found
+// 判断父菜单是否激活
+const isParentActive = (menu) => {
+  if (!menu.children) return false
+  return menu.children.some(child => child.fullPath === activeMenu.value)
+}
+
+// 切换子菜单展开/收起
+const toggleSubmenu = (menu) => {
+  if (props.collapsed) return
+
+  const index = expandedMenus.value.indexOf(menu.id)
+  if (index > -1) {
+    expandedMenus.value.splice(index, 1)
+  } else {
+    expandedMenus.value.push(menu.id)
+  }
+}
+
+// 处理菜单点击
+const handleMenuClick = (path) => {
+  if (!path) return
+
+  emit('menu-select', path)
+  router.push(path)
+}
+
+// 监听路由变化，自动展开对应的父菜单
+watch(() => route.path, (newPath) => {
+  props.menuList.forEach(menu => {
+    if (menu.children) {
+      const hasActiveChild = menu.children.some(child => child.fullPath === newPath)
+      if (hasActiveChild && !expandedMenus.value.includes(menu.id)) {
+        expandedMenus.value.push(menu.id)
       }
     }
-    return null
-  }
+  })
+}, { immediate: true })
 
-  const menu = findMenuByPath(props.menuList, index)
-  if (menu) {
-    selectMenu(menu)
+// 监听折叠状态变化
+watch(() => props.collapsed, (collapsed) => {
+  if (collapsed) {
+    expandedMenus.value = []
+  } else {
+    // 展开当前激活菜单的父菜单
+    props.menuList.forEach(menu => {
+      if (menu.children) {
+        const hasActiveChild = menu.children.some(child => child.fullPath === route.path)
+        if (hasActiveChild && !expandedMenus.value.includes(menu.id)) {
+          expandedMenus.value.push(menu.id)
+        }
+      }
+    })
   }
-}
-
-const selectMenu = (menu) => {
-  emit('menu-select', menu)
-}
+})
 </script>
 
 <style scoped>
-.sidebar {
+/* 主容器 */
+.modern-sidebar {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 250, 252, 0.95) 50%,
+    rgba(241, 245, 249, 0.95) 100%
+  );
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow:
+    4px 0 24px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  width: 260px;
 }
 
+.modern-sidebar.collapsed {
+  width: 80px;
+}
+
+/* Logo区域 */
 .logo-container {
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--border-color);
-  padding: 0 16px;
-  transition: all 0.3s ease;
-}
-
-.logo-container.collapsed {
-  padding: 0 8px;
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.05) 0%,
+    rgba(118, 75, 162, 0.05) 100%
+  );
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--text-primary);
+  gap: 16px;
+}
+
+.logo-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow:
+    0 8px 25px rgba(102, 126, 234, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  transition: all 0.3s ease;
+}
+
+.logo-icon:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 12px 35px rgba(102, 126, 234, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.logo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .logo-text {
-  white-space: nowrap;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  line-height: 1.2;
 }
 
-.menu-scrollbar {
+.logo-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 菜单容器 */
+.menu-container {
   flex: 1;
   overflow: hidden;
 }
 
-.sidebar-menu {
-  border: none;
-  background: transparent;
-  padding: 8px;
+.menu-scrollbar {
+  height: 100%;
 }
 
+.menu-scroll-view {
+  padding: 16px 0;
+}
+
+.menu-wrapper {
+  padding: 0 16px;
+}
+
+/* 菜单组 */
+.menu-group {
+  margin-bottom: 8px;
+}
+
+/* 父菜单项 */
+.menu-parent {
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-parent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.08) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-parent:hover::before {
+  opacity: 1;
+}
+
+.menu-parent.active::before {
+  opacity: 1;
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.15) 0%,
+    rgba(118, 75, 162, 0.15) 100%
+  );
+}
+
+.menu-parent-content {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.menu-parent.active .menu-parent-content {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* 单独的菜单项 */
 .menu-item {
-  margin: 4px 0;
-  border-radius: var(--radius-md) !important;
-  transition: all 0.2s ease;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
-.menu-item:hover {
-  background: var(--secondary-color) !important;
-  transform: translateX(2px);
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.08) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.menu-item.is-active {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light)) !important;
-  color: white !important;
-  box-shadow: var(--shadow-sm);
+.menu-item:hover::before {
+  opacity: 1;
 }
 
+.menu-item.active::before {
+  opacity: 1;
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.15) 0%,
+    rgba(118, 75, 162, 0.15) 100%
+  );
+}
+
+.menu-item.active {
+  box-shadow:
+    0 4px 12px rgba(102, 126, 234, 0.15),
+    0 0 0 1px rgba(102, 126, 234, 0.1) inset;
+}
+
+.menu-item-content {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.menu-item.active .menu-item-content {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* 图标包装器 */
+.menu-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(241, 245, 249, 0.8);
+  margin-right: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.menu-item.active .menu-icon-wrapper,
+.menu-parent.active .menu-icon-wrapper {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.05);
+}
+
+.menu-icon {
+  font-size: 18px;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.menu-item.active .menu-icon,
+.menu-parent.active .menu-icon {
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+/* 文本包装器 */
+.menu-text-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.3s ease;
+}
+
+.expand-icon {
+  font-size: 14px;
+  color: #64748b;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+}
+
+.expand-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.menu-parent.active .expand-icon {
+  color: #667eea;
+}
+
+/* 子菜单容器 */
+.submenu-container {
+  margin-left: 12px;
+  margin-top: 4px;
+  border-left: 2px solid rgba(226, 232, 240, 0.6);
+  padding-left: 8px;
+}
+
+/* 子菜单项 */
 .submenu-item {
-  margin: 2px 0;
-  border-radius: var(--radius-sm) !important;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .submenu-item:hover {
-  background: rgba(99, 102, 241, 0.1) !important;
-  color: var(--primary-color) !important;
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateX(2px);
 }
 
-.submenu-item.is-active {
-  background: var(--primary-color) !important;
-  color: white !important;
+.submenu-item.active {
+  background: linear-gradient(135deg,
+    rgba(102, 126, 234, 0.12) 0%,
+    rgba(118, 75, 162, 0.12) 100%
+  );
+  color: #667eea;
+  font-weight: 600;
+  transform: translateX(4px);
 }
 
-.collapse-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+.submenu-indicator {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+.submenu-item.active .submenu-indicator {
+  background: #667eea;
+  transform: scale(1.5);
+}
+
+.submenu-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.submenu-icon {
+  font-size: 16px;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.submenu-item.active .submenu-icon {
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+.submenu-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.submenu-item.active .submenu-title {
+  color: #667eea;
+}
+
+/* 用户区域 */
+.user-section {
+  padding: 16px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  background: linear-gradient(135deg,
+    rgba(248, 250, 252, 0.8) 0%,
+    rgba(241, 245, 249, 0.8) 100%
+  );
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-card:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-card.collapsed {
+  justify-content: center;
+  padding: 12px;
+}
+
+.user-avatar {
   width: 40px;
   height: 40px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* 折叠按钮 */
+.collapse-btn {
+  position: absolute;
+  top: 50%;
+  right: -16px;
+  transform: translateY(-50%);
+  z-index: 10;
+  cursor: pointer;
+}
+
+.collapse-btn-inner {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  color: #64748b;
+  transition: all 0.3s ease;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
 }
 
-.collapse-btn:hover {
-  background: var(--primary-color);
+.collapse-btn-inner:hover {
+  background: #667eea;
   color: white;
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: scale(1.1);
+  box-shadow:
+    0 6px 20px rgba(102, 126, 234, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+/* 动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.fade-slide-enter-from,
+.fade-slide-leave-to {
   opacity: 0;
+  transform: translateX(-10px);
+}
+
+.submenu-slide-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.submenu-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.submenu-slide-enter-from,
+.submenu-slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.submenu-slide-enter-to,
+.submenu-slide-leave-from {
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .modern-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+  }
+
+  .modern-sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  .collapse-btn {
+    display: none;
+  }
+}
+
+/* 滚动条样式 */
+.menu-scrollbar :deep(.el-scrollbar__bar.is-vertical) {
+  right: 2px;
+  width: 4px;
+}
+
+.menu-scrollbar :deep(.el-scrollbar__thumb) {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 2px;
+}
+
+.menu-scrollbar :deep(.el-scrollbar__thumb:hover) {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* 特殊状态 */
+.modern-sidebar.collapsed .menu-wrapper {
+  padding: 0 12px;
+}
+
+.modern-sidebar.collapsed .menu-icon-wrapper {
+  margin-right: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.modern-sidebar.collapsed .menu-parent-content,
+.modern-sidebar.collapsed .menu-item-content {
+  justify-content: center;
+  padding: 14px 8px;
 }
 </style>

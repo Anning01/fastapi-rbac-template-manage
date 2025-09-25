@@ -87,6 +87,19 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import {
+  Fold,
+  Expand,
+  Search,
+  Bell,
+  FullScreen,
+  Sunny,
+  Moon,
+  User,
+  ArrowDown,
+  Setting,
+  SwitchButton
+} from '@element-plus/icons-vue'
 
 const props = defineProps({
   collapsed: {

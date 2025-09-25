@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useMenuStore } from '@/stores/menu'
+import { useAuthStore } from '@/stores/auth'
 
 // 不需要权限和布局的路由
 const publicRoutes = [
@@ -47,9 +47,52 @@ const layoutRoute = {
       component: () => import('@/views/dashboard.vue'),
       meta: {
         title: '仪表盘',
-        hideInMenu: false,
+        icon: 'House',
         requiresAuth: true
       }
+    },
+    {
+      path: 'system',
+      name: 'System',
+      component: () => import('@/layouts/RouterViewWrapper.vue'),
+      redirect: '/system/users',
+      meta: {
+        title: '系统管理',
+        icon: 'Setting',
+        requiresAuth: true
+      },
+      children: [
+        {
+          path: 'users',
+          name: 'Users',
+          component: () => import('@/views/users/UserList.vue'),
+          meta: {
+            title: '用户管理',
+            icon: 'User',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'roles',
+          name: 'Roles',
+          component: () => import('@/views/users/RoleList.vue'),
+          meta: {
+            title: '角色管理',
+            icon: 'Avatar',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'permissions',
+          name: 'Permissions',
+          component: () => import('@/views/users/PermissionList.vue'),
+          meta: {
+            title: '权限管理',
+            icon: 'Key',
+            requiresAuth: true
+          }
+        }
+      ]
     }
   ]
 }
@@ -59,60 +102,27 @@ const router = createRouter({
   routes: [layoutRoute, ...publicRoutes]
 })
 
-// 动态添加路由的函数
-export const addDynamicRoutes = (menuRoutes) => {
-  // 清除之前的动态路由（除了 dashboard）
-  const currentLayoutRoute = router.getRoutes().find(route => route.name === 'Layout')
-  if (currentLayoutRoute && currentLayoutRoute.children) {
-    // 保留 dashboard 路由，移除其他动态路由
-    const staticChildren = currentLayoutRoute.children.filter(child =>
-      child.name === 'Dashboard'
-    )
-
-    // 移除整个布局路由并重新添加
-    router.removeRoute('Layout')
-  }
-
-  // 创建新的布局路由，包含静态路由和动态路由
-  const newLayoutRoute = {
-    ...layoutRoute,
-    children: [
-      ...layoutRoute.children, // 包含 dashboard 等静态路由
-      ...menuRoutes // 添加动态菜单路由
-    ]
-  }
-
-  router.addRoute(newLayoutRoute)
-}
-
 // 路由守卫
-router.beforeEach(async (to, from, next) => {
-  const menuStore = useMenuStore()
+router.beforeEach(async (to, _from, next) => {
+  const authStore = useAuthStore()
 
-  // 如果是不需要权限的路由，直接通过
-  if (to.meta?.requiresAuth === false) {
+  const isAuthenticated = authStore.token
+
+  // If the route does not require authentication
+  if (to.meta.requiresAuth === false) {
     next()
     return
   }
 
-  // 检查是否已加载菜单
-  if (menuStore.menuList.length === 0 && !menuStore.menuLoading) {
-    try {
-      // 加载菜单并生成路由
-      await menuStore.fetchMenus()
-      const dynamicRoutes = menuStore.generateRoutes
-      addDynamicRoutes(dynamicRoutes)
-
-      // 重新导航到目标路由
-      next({ ...to, replace: true })
-    } catch (error) {
-      console.error('加载菜单失败:', error)
-      next('/login')
-    }
-  } else {
+  // If the user is authenticated
+  if (isAuthenticated) {
     next()
+  } else {
+    // If the user is not authenticated, redirect to login
+    next({ path: '/login', query: { redirect: to.fullPath } })
   }
 })
+
 
 // 路由后置守卫
 router.afterEach((to) => {
@@ -121,10 +131,38 @@ router.afterEach((to) => {
   if (title) {
     document.title = `${title} - 管理后台`
   }
-
-  // 记录当前路径
-  const menuStore = useMenuStore()
-  menuStore.currentPath = to.path
 })
+
+// 从路由配置生成菜单的函数
+export const generateMenuFromRoutes = (routes) => {
+  const buildMenus = (routeList) => {
+    return routeList
+      .filter(route => route.meta && !route.meta.hideInMenu && route.meta.requiresAuth)
+      .map(route => {
+        const menu = {
+          id: route.name,
+          title: route.meta.title,
+          icon: route.meta.icon,
+          path: route.path === '' ? '/' : route.path,
+          fullPath: route.path === '' ? '/' : route.path
+        }
+
+        if (route.children && route.children.length > 0) {
+          const children = buildMenus(route.children).map(child => ({
+            ...child,
+            fullPath: route.path === '/' ? child.path : `/${route.path}/${child.path}`.replace(/\/\/+/g, '/')
+          }))
+          if (children.length > 0) {
+            menu.children = children
+          }
+        }
+
+        return menu
+      })
+  }
+
+  const layoutRoute = routes.find(route => route.name === 'Layout')
+  return layoutRoute ? buildMenus(layoutRoute.children || []) : []
+}
 
 export default router
